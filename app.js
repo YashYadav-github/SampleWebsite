@@ -2,11 +2,13 @@
 
 document.addEventListener('DOMContentLoaded', () => {
   initSlider();
-  initCalculator();
+  initTypingTagline();
+  initContactForm();
   initBookingModal();
   initServiceChecklists();
   initMobileMenu();
   initScrollReveal();
+  initHeroVideoPlaylist();
 });
 
 /* -------------------------------------------------------------
@@ -56,136 +58,112 @@ function initSlider() {
 }
 
 /* -------------------------------------------------------------
- * 2. Dynamic Pricing Calculator
+ * 2. Typing Tagline Slogan Effect
  * ------------------------------------------------------------- */
-function initCalculator() {
-  const bedroomsInput = document.getElementById('calcBedrooms');
-  const bedroomsVal = document.getElementById('calcBedroomsVal');
-  const bathroomsInput = document.getElementById('calcBathrooms');
-  const bathroomsVal = document.getElementById('calcBathroomsVal');
-  const serviceTypeInput = document.getElementById('calcService');
-  const frequencyToggle = document.getElementsByName('calcFrequency');
-  const addons = document.querySelectorAll('.calc-addon');
-  const totalPriceEl = document.getElementById('calcTotalPrice');
-  const bookEstimateBtn = document.getElementById('calcBookBtn');
+function initTypingTagline() {
+  const element = document.getElementById('typingTagline');
+  if (!element) return;
 
-  if (!bedroomsInput || !totalPriceEl) return;
+  const words = ["Clean", "Safe", "Pristine"];
+  let wordIndex = 0;
+  let charIndex = 0;
+  let isDeleting = false;
+  let typingSpeed = 150;
 
-  // Addon selection visual toggle
-  addons.forEach(addon => {
-    addon.addEventListener('click', () => {
-      addon.classList.toggle('selected');
-      const checkbox = addon.querySelector('input[type="checkbox"]');
-      if (checkbox) checkbox.checked = !checkbox.checked;
-      calculateEstimate();
-    });
-  });
-
-  // Numeric input update listeners
-  bedroomsInput.addEventListener('input', (e) => {
-    bedroomsVal.textContent = e.target.value;
-    calculateEstimate();
-  });
-
-  bathroomsInput.addEventListener('input', (e) => {
-    bathroomsVal.textContent = e.target.value;
-    calculateEstimate();
-  });
-
-  serviceTypeInput.addEventListener('change', calculateEstimate);
-
-  frequencyToggle.forEach(radio => {
-    radio.addEventListener('change', calculateEstimate);
-  });
-
-  let currentCalculatedPrice = 0;
-
-  function calculateEstimate() {
-    // Pricing System (CAD)
-    const basePrice = 100;
-    const bedrooms = parseInt(bedroomsInput.value) || 1;
-    const bathrooms = parseFloat(bathroomsInput.value) || 1;
+  function type() {
+    const currentWord = words[wordIndex];
     
-    const bedCost = bedrooms * 30;
-    const bathCost = bathrooms * 45;
-    
-    let serviceMultiplier = 1.0;
-    const serviceType = serviceTypeInput.value;
-    if (serviceType === 'deep') serviceMultiplier = 1.5;
-    if (serviceType === 'move') serviceMultiplier = 1.8;
+    if (isDeleting) {
+      element.textContent = currentWord.substring(0, charIndex - 1);
+      charIndex--;
+      typingSpeed = 75;
+    } else {
+      element.textContent = currentWord.substring(0, charIndex + 1);
+      charIndex++;
+      typingSpeed = 150;
+    }
 
-    let frequencyDiscount = 0.0;
-    frequencyToggle.forEach(radio => {
-      if (radio.checked) {
-        if (radio.value === 'weekly') frequencyDiscount = 0.15;
-        if (radio.value === 'biweekly') frequencyDiscount = 0.10;
-      }
-    });
+    if (!isDeleting && charIndex === currentWord.length) {
+      isDeleting = true;
+      typingSpeed = 1500;
+    } else if (isDeleting && charIndex === 0) {
+      isDeleting = false;
+      wordIndex = (wordIndex + 1) % words.length;
+      typingSpeed = 500;
+    }
 
-    let addonsCost = 0;
-    addons.forEach(addon => {
-      const checkbox = addon.querySelector('input[type="checkbox"]');
-      if (checkbox && checkbox.checked) {
-        addonsCost += parseFloat(checkbox.dataset.price) || 0;
-      }
-    });
-
-    const subtotal = (basePrice + bedCost + bathCost) * serviceMultiplier;
-    const discountAmount = subtotal * frequencyDiscount;
-    const finalPrice = Math.round(subtotal - discountAmount + addonsCost);
-
-    animatePrice(finalPrice);
+    setTimeout(type, typingSpeed);
   }
 
-  // Smooth number count animation
-  function animatePrice(targetVal) {
-    const startVal = currentCalculatedPrice;
-    if (startVal === targetVal) {
-      totalPriceEl.textContent = `$${targetVal}`;
+  type();
+}
+
+/* -------------------------------------------------------------
+ * 2b. Need Cleaning Contact Form Handler
+ * ------------------------------------------------------------- */
+function initContactForm() {
+  const form = document.getElementById('contactForm');
+  const nameInput = document.getElementById('contactName');
+  const emailInput = document.getElementById('contactEmail');
+  const messageInput = document.getElementById('contactMessage');
+  const captchaInput = document.getElementById('contactCaptcha');
+  const captchaLabel = document.getElementById('captchaLabel');
+  const statusEl = document.getElementById('contactFormStatus');
+  const errorEl = document.getElementById('contactFormError');
+  const submitBtn = document.getElementById('contactSubmitBtn');
+
+  if (!form || !captchaLabel) return;
+
+  // Generate dynamic captcha numbers
+  let num1 = Math.floor(Math.random() * 10) + 2;
+  let num2 = Math.floor(Math.random() * 10) + 2;
+  let correctAnswer = num1 + num2;
+  captchaLabel.textContent = `${num1} + ${num2} =`;
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    
+    statusEl.classList.add('hidden');
+    errorEl.classList.add('hidden');
+    
+    const name = nameInput.value.trim();
+    const email = emailInput.value.trim();
+    const message = messageInput.value.trim();
+    const userAnswer = parseInt(captchaInput.value.trim());
+
+    if (!name || !email || !message) {
+      errorEl.textContent = "Please fill in all fields.";
+      errorEl.classList.remove('hidden');
       return;
     }
 
-    const duration = 400; // ms
-    const startTime = performance.now();
-
-    function updateNumber(now) {
-      const elapsed = now - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      // Ease out cubic
-      const ease = 1 - Math.pow(1 - progress, 3);
-      
-      const current = Math.round(startVal + (targetVal - startVal) * ease);
-      totalPriceEl.textContent = `$${current}`;
-
-      if (progress < 1) {
-        requestAnimationFrame(updateNumber);
-      } else {
-        currentCalculatedPrice = targetVal;
-      }
+    if (userAnswer !== correctAnswer) {
+      errorEl.textContent = "Incorrect math answer. Please try again.";
+      errorEl.classList.remove('hidden');
+      captchaInput.classList.add('border-red-500');
+      return;
+    } else {
+      captchaInput.classList.remove('border-red-500');
     }
 
-    requestAnimationFrame(updateNumber);
-  }
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Sending...";
 
-  // Handle calculator booking connection
-  if (bookEstimateBtn) {
-    bookEstimateBtn.addEventListener('click', () => {
-      // Fetch values to populate booking modal
-      const bedrooms = bedroomsInput.value;
-      const bathrooms = bathroomsInput.value;
-      const serviceType = serviceTypeInput.value;
+    setTimeout(() => {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Send";
+      statusEl.textContent = "Message sent successfully! We will get in touch with you shortly.";
+      statusEl.classList.remove('hidden');
       
-      let freq = 'one-time';
-      frequencyToggle.forEach(radio => {
-        if (radio.checked) freq = radio.value;
-      });
-
-      openBookingModalWithPrePop(bedrooms, bathrooms, serviceType, freq, currentCalculatedPrice);
-    });
-  }
-
-  // Initial Calculation
-  calculateEstimate();
+      form.reset();
+      
+      // Regenerate captcha
+      num1 = Math.floor(Math.random() * 10) + 2;
+      num2 = Math.floor(Math.random() * 10) + 2;
+      correctAnswer = num1 + num2;
+      captchaLabel.textContent = `${num1} + ${num2} =`;
+    }, 1200);
+  });
 }
 
 /* -------------------------------------------------------------
@@ -617,5 +595,32 @@ function initScrollReveal() {
       header.classList.remove('shadow-md', 'py-3');
       header.classList.add('py-5');
     }
+  });
+}
+
+/* -------------------------------------------------------------
+ * 7. Background Video Playlist Loop
+ * ------------------------------------------------------------- */
+function initHeroVideoPlaylist() {
+  const video = document.getElementById('heroVideo');
+  if (!video) return;
+
+  const playlist = ["glassclean.mp4", "moppingclean.mp4", "sprayclean.mp4"];
+  let currentIndex = 0;
+
+  video.addEventListener('ended', () => {
+    currentIndex = (currentIndex + 1) % playlist.length;
+    video.src = playlist[currentIndex];
+    video.load();
+    video.play().catch(err => {
+      console.warn("Video play interrupted or block by browser policy:", err);
+      // Try next video if there's an error loading this one
+      setTimeout(() => {
+        currentIndex = (currentIndex + 1) % playlist.length;
+        video.src = playlist[currentIndex];
+        video.load();
+        video.play().catch(() => {});
+      }, 1000);
+    });
   });
 }
